@@ -23,12 +23,16 @@ class MeshagentAuth {
     return getAccessToken() != null;
   }
 
-  bool isExpired() {
+  DateTime? get expiration {
     final exp = localStorage.getItem("ma:expiration");
     if (exp != null) {
-      return DateTime.parse(exp).isBefore(DateTime.now());
+      return DateTime.parse(exp);
     }
-    return false;
+    return null;
+  }
+
+  bool isExpired() {
+    return expiration?.isBefore(DateTime.now()) ?? false;
   }
 
   String? getAccessToken() {
