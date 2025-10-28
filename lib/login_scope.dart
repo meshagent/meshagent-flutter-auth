@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -165,13 +166,21 @@ class _LoginScopeState extends State<LoginScope> {
       },
     );
 
-    final returnUrl = await FlutterWebAuth2.authenticate(
-      url: url.toString(),
-      callbackUrlScheme: MeshagentConfig.current!.authScheme,
-      options: FlutterWebAuth2Options(windowName: "_self"),
-    );
-
-    return returnUrl;
+    if (kIsWeb) {
+      final returnUrl = await FlutterWebAuth2.authenticate(
+        url: url.toString(),
+        callbackUrlScheme: url.scheme,
+        options: FlutterWebAuth2Options(windowName: "_self"),
+      );
+      return returnUrl;
+    } else {
+      final returnUrl = await FlutterWebAuth2.authenticate(
+        url: url.toString(),
+        callbackUrlScheme: url.scheme,
+        options: FlutterWebAuth2Options(),
+      );
+      return returnUrl;
+    }
   }
 
   @override

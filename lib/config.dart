@@ -3,9 +3,6 @@ import 'package:http/http.dart';
 
 class MeshagentConfig {
   MeshagentConfig({
-    required this.authUrl,
-    required this.authScheme,
-    required this.authAnonKey,
     required this.iosGoogleClientId,
     required this.webGoogleClientId,
     required this.serverUrl,
@@ -18,9 +15,6 @@ class MeshagentConfig {
     required this.oauthClientId,
   });
 
-  final String authUrl;
-  final String authScheme;
-  final String authAnonKey;
   final String iosGoogleClientId;
   final String webGoogleClientId;
   final String serverUrl;
@@ -34,9 +28,6 @@ class MeshagentConfig {
 
   static MeshagentConfig fromEnvironment() {
     return MeshagentConfig(
-      authUrl: const String.fromEnvironment("AUTH_URL"),
-      authScheme: const String.fromEnvironment("AUTH_SCHEME"),
-      authAnonKey: const String.fromEnvironment("AUTH_ANON_KEY"),
       serverUrl: const String.fromEnvironment("SERVER_URL"),
       iosGoogleClientId: const String.fromEnvironment("IOS_GOOGLE_CLIENT_ID"),
       webGoogleClientId: const String.fromEnvironment("WEB_GOOGLE_CLIENT_ID"),
@@ -60,9 +51,6 @@ class MeshagentConfig {
     final res = await get(uri);
     final data = jsonDecode(res.body);
     return MeshagentConfig(
-      authUrl: data["AUTH_URL"],
-      authScheme: data["AUTH_SCHEME"],
-      authAnonKey: data["AUTH_ANON_KEY"],
       serverUrl: data["SERVER_URL"],
       iosGoogleClientId: data["IOS_GOOGLE_CLIENT_ID"],
       webGoogleClientId: data["WEB_GOOGLE_CLIENT_ID"],
