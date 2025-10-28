@@ -25,7 +25,7 @@ class LoginScope extends StatefulWidget {
 }
 
 class _LoginScopeState extends State<LoginScope> {
-  Exception? failed;
+  Object? failed;
   bool refreshing = true;
 
   @override
@@ -100,7 +100,7 @@ class _LoginScopeState extends State<LoginScope> {
             refreshing = false;
           });
         }
-      } on Exception catch (e) {
+      } catch (e) {
         if (mounted) {
           setState(() {
             failed = e;
