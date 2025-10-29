@@ -175,9 +175,12 @@ class _LoginScopeState extends State<LoginScope> {
     );
 
     final returnUrl = await FlutterWebAuth2.authenticate(
-        url: url.toString(),
-        callbackUrlScheme: widget.appUrl.scheme,
-        options: kIsWeb ? FlutterWebAuth2Options(windowName: "_self") : FlutterWebAuth2Options(),
+      url: url.toString(),
+      callbackUrlScheme: widget.appUrl.scheme,
+      options:
+          kIsWeb
+              ? FlutterWebAuth2Options(windowName: "_self")
+              : FlutterWebAuth2Options(),
     );
 
     return returnUrl;
