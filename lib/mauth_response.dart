@@ -61,7 +61,7 @@ class _MAuthResponsePage extends State<MAuthResponsePage> {
       widget.serverUrl.replace(path: "/oauth/token"),
       headers: {"content-type": "application/json"},
       body: jsonEncode({
-        "client_id": widget..oauthClientId,
+        "client_id": widget.oauthClientId,
         "code_verifier": codeVerifier,
         "code": widget.authorizationCode,
         "grant_type": "authorization_code",
