@@ -4,32 +4,22 @@ import 'package:localstorage/localstorage.dart';
 import 'package:http/http.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
-import 'config.dart';
 import 'meshagent_auth.dart';
 import 'package:meshagent/meshagent.dart';
-
-Meshagent getMeshagentClient() {
-  final token = MeshagentAuth.current.getAccessToken();
-  final baseUrl = MeshagentConfig.current?.serverUrl;
-
-  if (token == null) {
-    throw Exception("No access token - you are not logged in");
-  }
-
-  if (baseUrl == null) {
-    throw Exception("No base URL - you are not logged in");
-  }
-
-  return Meshagent(baseUrl: baseUrl, token: token);
-}
 
 class MAuthResponsePage extends StatefulWidget {
   const MAuthResponsePage({
     super.key,
+    required this.serverUrl,
+    required this.appUrl,
+    required this.oauthClientId,
     required this.authorizationCode,
     required this.onAuthSuccess,
   });
 
+  final Uri serverUrl;
+  final Uri appUrl;
+  final String oauthClientId;
   final String authorizationCode;
   final VoidCallback onAuthSuccess;
 
@@ -47,6 +37,17 @@ class _MAuthResponsePage extends State<MAuthResponsePage> {
     exchangeToken();
   }
 
+  Meshagent getMeshagentClient() {
+    final token = MeshagentAuth.current.getAccessToken();
+    final baseUrl = widget.serverUrl.toString();
+
+    if (token == null) {
+      throw Exception("No access token - you are not logged in");
+    }
+
+    return Meshagent(baseUrl: baseUrl, token: token);
+  }
+
   void exchangeToken() async {
     final codeVerifier = localStorage.getItem("cv");
     if (codeVerifier == null) {
@@ -57,16 +58,14 @@ class _MAuthResponsePage extends State<MAuthResponsePage> {
     }
 
     final res = await post(
-      Uri.parse(
-        MeshagentConfig.current!.serverUrl,
-      ).replace(path: "/oauth/token"),
+      widget.serverUrl.replace(path: "/oauth/token"),
       headers: {"content-type": "application/json"},
       body: jsonEncode({
-        "client_id": MeshagentConfig.current!.oauthClientId,
+        "client_id": widget..oauthClientId,
         "code_verifier": codeVerifier,
         "code": widget.authorizationCode,
         "grant_type": "authorization_code",
-        "redirect_uri": "${MeshagentConfig.current!.appUrl}/mauth/callback",
+        "redirect_uri": widget.appUrl.replace(path: "/mauth/callback"),
       }),
     );
 

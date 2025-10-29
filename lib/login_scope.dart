@@ -9,14 +9,21 @@ import 'package:http/http.dart';
 import 'package:meshagent/meshagent.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
-import 'config.dart';
 import 'meshagent_auth.dart';
 import 'pkce_generator.dart';
 
 class LoginScope extends StatefulWidget {
-  const LoginScope({super.key, this.callbackUrlScheme, required this.builder});
+  const LoginScope({
+    super.key,
+    required this.serverUrl,
+    required this.appUrl,
+    required this.oauthClientId,
+    required this.builder,
+  });
 
-  final String? callbackUrlScheme;
+  final Uri serverUrl;
+  final Uri appUrl;
+  final String oauthClientId;
   final Widget Function(BuildContext) builder;
 
   @override
@@ -43,7 +50,7 @@ class _LoginScopeState extends State<LoginScope> {
             false) {
           final token = MeshagentAuth.current.getAccessToken()!;
           final me = await Meshagent(
-            baseUrl: MeshagentConfig.current!.serverUrl,
+            baseUrl: widget.serverUrl.toString(),
             token: token,
           ).getUserProfile("me");
 
@@ -58,16 +65,14 @@ class _LoginScopeState extends State<LoginScope> {
           // expired
           await refreshOAuthToken(
             refreshToken: MeshagentAuth.current.getRefreshToken()!,
-            clientId: MeshagentConfig.current!.oauthClientId,
-            tokenEndpoint: Uri.parse(
-              MeshagentConfig.current!.serverUrl,
-            ).replace(path: "/oauth/token"),
+            clientId: widget.oauthClientId,
+            tokenEndpoint: widget.serverUrl.replace(path: "/oauth/token"),
           );
 
           final token = MeshagentAuth.current.getAccessToken()!;
 
           final me = await Meshagent(
-            baseUrl: MeshagentConfig.current!.serverUrl,
+            baseUrl: widget.serverUrl.toString(),
             token: token,
           ).getUserProfile("me");
 
@@ -154,20 +159,23 @@ class _LoginScopeState extends State<LoginScope> {
     final storage = LocalStoragePkceCache(localStorage);
     storage.saveVerifier(pair.codeVerifier);
 
-    final url = Uri.parse(MeshagentConfig.current!.serverUrl).replace(
+    final redirectUri =
+        widget.appUrl.replace(path: "/mauth/callback").toString();
+
+    final url = widget.serverUrl.replace(
       path: "/oauth/authorize",
       queryParameters: {
         "scope": "email",
-        "client_id": MeshagentConfig.current!.oauthClientId,
+        "client_id": widget.oauthClientId,
         "code_challenge": pair.codeChallenge,
         "response_type": "code",
-        "redirect_uri": "${MeshagentConfig.current!.appUrl}/mauth/callback",
+        "redirect_uri": redirectUri,
       },
     );
 
     final returnUrl = await FlutterWebAuth2.authenticate(
       url: url.toString(),
-      callbackUrlScheme: MeshagentConfig.current!.authScheme,
+      callbackUrlScheme: widget.appUrl.scheme,
       options: FlutterWebAuth2Options(windowName: "_self"),
     );
 
