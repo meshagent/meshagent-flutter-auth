@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -31,7 +32,7 @@ class LoginScope extends StatefulWidget {
 }
 
 class _LoginScopeState extends State<LoginScope> {
-  Exception? failed;
+  Object? failed;
   bool refreshing = true;
 
   @override
@@ -104,7 +105,7 @@ class _LoginScopeState extends State<LoginScope> {
             refreshing = false;
           });
         }
-      } on Exception catch (e) {
+      } catch (e) {
         if (mounted) {
           setState(() {
             failed = e;
@@ -174,9 +175,9 @@ class _LoginScopeState extends State<LoginScope> {
     );
 
     final returnUrl = await FlutterWebAuth2.authenticate(
-      url: url.toString(),
-      callbackUrlScheme: widget.appUrl.scheme,
-      options: FlutterWebAuth2Options(windowName: "_self"),
+        url: url.toString(),
+        callbackUrlScheme: widget.appUrl.scheme,
+        options: kIsWeb ? FlutterWebAuth2Options(windowName: "_self") : FlutterWebAuth2Options(),
     );
 
     return returnUrl;
