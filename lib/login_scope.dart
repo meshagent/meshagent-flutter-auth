@@ -17,13 +17,13 @@ class LoginScope extends StatefulWidget {
   const LoginScope({
     super.key,
     required this.serverUrl,
-    required this.appUrl,
+    required this.callbackUrl,
     required this.oauthClientId,
     required this.builder,
   });
 
   final Uri serverUrl;
-  final Uri appUrl;
+  final Uri callbackUrl;
   final String oauthClientId;
   final Widget Function(BuildContext) builder;
 
@@ -160,9 +160,6 @@ class _LoginScopeState extends State<LoginScope> {
     final storage = LocalStoragePkceCache(localStorage);
     storage.saveVerifier(pair.codeVerifier);
 
-    final redirectUri =
-        widget.appUrl.replace(path: "/mauth/callback").toString();
-
     final url = widget.serverUrl.replace(
       path: "/oauth/authorize",
       queryParameters: {
@@ -170,13 +167,13 @@ class _LoginScopeState extends State<LoginScope> {
         "client_id": widget.oauthClientId,
         "code_challenge": pair.codeChallenge,
         "response_type": "code",
-        "redirect_uri": redirectUri,
+        "redirect_uri": widget.callbackUrl.toString(),
       },
     );
 
     final returnUrl = await FlutterWebAuth2.authenticate(
       url: url.toString(),
-      callbackUrlScheme: widget.appUrl.scheme,
+      callbackUrlScheme: widget.callbackUrl.scheme,
       options:
           kIsWeb
               ? FlutterWebAuth2Options(windowName: "_self")

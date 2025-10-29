@@ -11,14 +11,14 @@ class MAuthResponsePage extends StatefulWidget {
   const MAuthResponsePage({
     super.key,
     required this.serverUrl,
-    required this.appUrl,
+    required this.callbackUrl,
     required this.oauthClientId,
     required this.authorizationCode,
     required this.onAuthSuccess,
   });
 
   final Uri serverUrl;
-  final Uri appUrl;
+  final Uri callbackUrl;
   final String oauthClientId;
   final String authorizationCode;
   final VoidCallback onAuthSuccess;
@@ -57,8 +57,6 @@ class _MAuthResponsePage extends State<MAuthResponsePage> {
       return;
     }
 
-    final redirectUri =
-        widget.appUrl.replace(path: "/mauth/callback").toString();
     final res = await post(
       widget.serverUrl.replace(path: "/oauth/token"),
       headers: {"content-type": "application/json"},
@@ -67,7 +65,7 @@ class _MAuthResponsePage extends State<MAuthResponsePage> {
         "code_verifier": codeVerifier,
         "code": widget.authorizationCode,
         "grant_type": "authorization_code",
-        "redirect_uri": redirectUri,
+        "redirect_uri": widget.callbackUrl.toString(),
       }),
     );
 
