@@ -57,6 +57,8 @@ class _MAuthResponsePage extends State<MAuthResponsePage> {
       return;
     }
 
+    final redirectUri =
+        widget.appUrl.replace(path: "/mauth/callback").toString();
     final res = await post(
       widget.serverUrl.replace(path: "/oauth/token"),
       headers: {"content-type": "application/json"},
@@ -65,7 +67,7 @@ class _MAuthResponsePage extends State<MAuthResponsePage> {
         "code_verifier": codeVerifier,
         "code": widget.authorizationCode,
         "grant_type": "authorization_code",
-        "redirect_uri": widget.appUrl.replace(path: "/mauth/callback"),
+        "redirect_uri": redirectUri,
       }),
     );
 
