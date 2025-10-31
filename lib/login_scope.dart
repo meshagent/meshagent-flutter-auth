@@ -19,12 +19,14 @@ class LoginScope extends StatefulWidget {
     required this.serverUrl,
     required this.callbackUrl,
     required this.oauthClientId,
+    this.onAuthenticated,
     required this.builder,
   });
 
   final Uri serverUrl;
   final Uri callbackUrl;
   final String oauthClientId;
+  final void Function(String returnUrl)? onAuthenticated;
   final Widget Function(BuildContext) builder;
 
   @override
@@ -98,7 +100,11 @@ class _LoginScopeState extends State<LoginScope> {
       }
     } else {
       try {
-        await launchOAuthLogin();
+        final redirectUrl = await launchOAuthLogin();
+
+        if (redirectUrl != null) {
+          widget.onAuthenticated?.call(redirectUrl);
+        }
 
         if (mounted) {
           setState(() {
