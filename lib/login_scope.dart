@@ -47,8 +47,8 @@ class _LoginScopeState extends State<LoginScope> {
   void load() async {
     if (MeshagentAuth.current.isLoggedIn()) {
       try {
-        if (MeshagentAuth.current.expiration?.isBefore(
-              DateTime.now().add(Duration(days: 1)),
+        if (MeshagentAuth.current.expiration?.isAfter(
+              DateTime.now().add(Duration(hours: 8)),
             ) ??
             false) {
           final token = MeshagentAuth.current.getAccessToken()!;
