@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:http/http.dart';
@@ -21,13 +22,20 @@ class LoginScope extends StatefulWidget {
     required this.oauthClientId,
     this.onAuthenticated,
     required this.builder,
+    this.signInBuilder,
   });
 
   final Uri serverUrl;
   final Uri callbackUrl;
   final String oauthClientId;
   final void Function(String returnUrl)? onAuthenticated;
-  final Widget Function(BuildContext) builder;
+  final Widget Function(BuildContext context) builder;
+  final Widget Function(
+    BuildContext context,
+    bool isCancelled,
+    VoidCallback signIn,
+  )?
+  signInBuilder;
 
   @override
   State createState() => _LoginScopeState();
@@ -36,6 +44,10 @@ class LoginScope extends StatefulWidget {
 class _LoginScopeState extends State<LoginScope> {
   Object? failed;
   bool refreshing = true;
+  bool isSigningIn = false;
+
+  bool isCancelled = false;
+  bool isLoginLaunched = false;
 
   @override
   void initState() {
@@ -58,13 +70,19 @@ class _LoginScopeState extends State<LoginScope> {
           ).getUserProfile("me");
 
           MeshagentAuth.current.setUser(me);
-          if (!mounted) {
-            return;
+          if (mounted) {
+            setState(() {
+              failed = null;
+              refreshing = false;
+              isLoginLaunched = false;
+              isCancelled = false;
+            });
           }
-          setState(() {
-            refreshing = false;
-          });
         } else {
+          setState(() {
+            refreshing = true;
+          });
+
           // expired
           await refreshOAuthToken(
             refreshToken: MeshagentAuth.current.getRefreshToken()!,
@@ -80,43 +98,86 @@ class _LoginScopeState extends State<LoginScope> {
           ).getUserProfile("me");
 
           MeshagentAuth.current.setUser(me);
-          if (!mounted) {
-            return;
+
+          if (mounted) {
+            setState(() {
+              failed = null;
+              refreshing = false;
+              isLoginLaunched = false;
+              isCancelled = false;
+            });
           }
-          setState(() {
-            refreshing = false;
-          });
         }
       } on Exception catch (e) {
         MeshagentAuth.current.setAccessToken(null);
         MeshagentAuth.current.setRefreshToken(null);
         MeshagentAuth.current.setExpiresIn(null);
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          failed = e;
-        });
-      }
-    } else {
-      try {
-        final redirectUrl = await launchOAuthLogin();
 
-        if (redirectUrl != null) {
-          widget.onAuthenticated?.call(redirectUrl);
-        }
-
-        if (mounted) {
-          setState(() {
-            refreshing = false;
-          });
-        }
-      } catch (e) {
         if (mounted) {
           setState(() {
             failed = e;
+            refreshing = false;
+            isLoginLaunched = true;
+            isCancelled = false;
           });
         }
+      }
+    } else {
+      if (widget.signInBuilder == null) {
+        await signIn();
+      } else {
+        if (mounted) {
+          setState(() {
+            failed = null;
+            refreshing = false;
+            isLoginLaunched = true;
+            isCancelled = false;
+          });
+        }
+      }
+    }
+  }
+
+  Future<void> signIn() async {
+    try {
+      setState(() {
+        isSigningIn = true;
+      });
+
+      final redirectUrl = await launchOAuthLogin();
+
+      if (redirectUrl != null) {
+        widget.onAuthenticated?.call(redirectUrl);
+      }
+
+      if (mounted) {
+        setState(() {
+          failed = null;
+          refreshing = false;
+          isLoginLaunched = false;
+          isCancelled = false;
+          isSigningIn = false;
+        });
+      }
+    } on PlatformException catch (e) {
+      if (mounted) {
+        setState(() {
+          failed = e;
+          refreshing = false;
+          isLoginLaunched = true;
+          isCancelled = e.code.toLowerCase().contains('cancel');
+          isSigningIn = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          failed = e;
+          refreshing = false;
+          isLoginLaunched = false;
+          isCancelled = false;
+          isSigningIn = false;
+        });
       }
     }
   }
@@ -191,14 +252,47 @@ class _LoginScopeState extends State<LoginScope> {
 
   @override
   Widget build(BuildContext context) {
-    if (failed != null) {
-      return Center(child: ShadAlert.destructive(title: Text("$failed")));
-    }
-
-    if (MeshagentAuth.current.isLoggedIn() && !refreshing) {
-      return widget.builder(context);
-    } else {
+    if (isSigningIn || refreshing) {
       return Center(child: CircularProgressIndicator());
     }
+
+    if (isLoginLaunched && widget.signInBuilder != null) {
+      return widget.signInBuilder!.call(context, isCancelled, signIn);
+    }
+
+    if (isCancelled) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: ShadCard(
+            rowMainAxisSize: MainAxisSize.max,
+            rowMainAxisAlignment: MainAxisAlignment.center,
+            columnCrossAxisAlignment: CrossAxisAlignment.center,
+            title: Padding(
+              padding: EdgeInsets.only(bottom: 5),
+              child: Text("Login cancelled"),
+            ),
+            description: Text("Please login to continue."),
+            footer: Padding(
+              padding: EdgeInsets.only(top: 30),
+              child: ShadButton(onPressed: signIn, child: Text("Login")),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (failed != null) {
+      return Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(child: ShadAlert.destructive(title: Text("$failed"))),
+      );
+    }
+
+    if (MeshagentAuth.current.isLoggedIn()) {
+      return widget.builder(context);
+    }
+
+    return Center(child: CircularProgressIndicator());
   }
 }
