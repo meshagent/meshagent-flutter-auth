@@ -227,15 +227,22 @@ class _LoginScopeState extends State<LoginScope> {
     final storage = LocalStoragePkceCache(localStorage);
     storage.saveVerifier(pair.codeVerifier);
 
+    final queryParameters = <String, dynamic>{
+      "scope": "email",
+      "client_id": widget.oauthClientId,
+      "code_challenge": pair.codeChallenge,
+      "response_type": "code",
+      "redirect_uri": widget.callbackUrl.toString(),
+    };
+
+    // Temporary workaround for provider selection
+    if (!kIsWeb) {
+      queryParameters["provider"] = "google";
+    }
+
     final url = widget.serverUrl.replace(
       path: "/oauth/authorize",
-      queryParameters: {
-        "scope": "email",
-        "client_id": widget.oauthClientId,
-        "code_challenge": pair.codeChallenge,
-        "response_type": "code",
-        "redirect_uri": widget.callbackUrl.toString(),
-      },
+      queryParameters: queryParameters,
     );
 
     final returnUrl = await FlutterWebAuth2.authenticate(
