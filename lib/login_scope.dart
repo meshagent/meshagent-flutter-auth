@@ -233,6 +233,7 @@ class _LoginScopeState extends State<LoginScope> {
       "code_challenge": pair.codeChallenge,
       "response_type": "code",
       "redirect_uri": widget.callbackUrl.toString(),
+      "prompt": "select_account",
     };
 
     // Temporary workaround for provider selection
