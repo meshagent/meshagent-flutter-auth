@@ -33,7 +33,7 @@ class LoginScope extends StatefulWidget {
   final Widget Function(
     BuildContext context,
     bool isCancelled,
-    VoidCallback signIn,
+    void Function(String? provider) signIn,
   )?
   signInBuilder;
 
@@ -124,7 +124,7 @@ class _LoginScopeState extends State<LoginScope> {
       }
     } else {
       if (widget.signInBuilder == null) {
-        await signIn();
+        await signIn(null);
       } else {
         if (mounted) {
           setState(() {
@@ -138,13 +138,13 @@ class _LoginScopeState extends State<LoginScope> {
     }
   }
 
-  Future<void> signIn() async {
+  Future<void> signIn(String? provider) async {
     try {
       setState(() {
         isSigningIn = true;
       });
 
-      final redirectUrl = await launchOAuthLogin();
+      final redirectUrl = await launchOAuthLogin(provider);
 
       if (redirectUrl != null) {
         widget.onAuthenticated?.call(redirectUrl);
@@ -219,7 +219,7 @@ class _LoginScopeState extends State<LoginScope> {
     }
   }
 
-  Future<String?> launchOAuthLogin() async {
+  Future<String?> launchOAuthLogin(String? provider) async {
     final gen = PkceGenerator();
 
     final pair = gen.generate();
@@ -236,9 +236,8 @@ class _LoginScopeState extends State<LoginScope> {
       "prompt": "select_account",
     };
 
-    // Temporary workaround for provider selection
-    if (!kIsWeb) {
-      queryParameters["provider"] = "google";
+    if (provider != null) {
+      queryParameters["provider"] = provider;
     }
 
     final url = widget.serverUrl.replace(
@@ -283,7 +282,12 @@ class _LoginScopeState extends State<LoginScope> {
             description: Text("Please login to continue."),
             footer: Padding(
               padding: EdgeInsets.only(top: 30),
-              child: ShadButton(onPressed: signIn, child: Text("Login")),
+              child: ShadButton(
+                onPressed: () {
+                  signIn(null);
+                },
+                child: Text("Login"),
+              ),
             ),
           ),
         ),
