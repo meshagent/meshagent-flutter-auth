@@ -23,6 +23,7 @@ class LoginScope extends StatefulWidget {
     this.onAuthenticated,
     required this.builder,
     this.signInBuilder,
+    this.extraQueryParams,
   });
 
   final Uri serverUrl;
@@ -36,6 +37,7 @@ class LoginScope extends StatefulWidget {
     void Function(String? provider) signIn,
   )?
   signInBuilder;
+  final Map<String, String>? extraQueryParams;
 
   @override
   State createState() => _LoginScopeState();
@@ -238,6 +240,10 @@ class _LoginScopeState extends State<LoginScope> {
 
     if (provider != null) {
       queryParameters["provider"] = provider;
+    }
+
+    if (widget.extraQueryParams != null) {
+      queryParameters["extra_query_params"] = jsonEncode(widget.extraQueryParams);
     }
 
     final url = widget.serverUrl.replace(
