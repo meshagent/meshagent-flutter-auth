@@ -243,7 +243,9 @@ class _LoginScopeState extends State<LoginScope> {
     }
 
     if (widget.extraQueryParams != null) {
-      queryParameters["extra_query_params"] = jsonEncode(widget.extraQueryParams);
+      queryParameters["extra_query_params"] = jsonEncode(
+        widget.extraQueryParams,
+      );
     }
 
     final url = widget.serverUrl.replace(
