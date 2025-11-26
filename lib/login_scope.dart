@@ -229,7 +229,10 @@ class _LoginScopeState extends State<LoginScope> {
     final storage = LocalStoragePkceCache(localStorage);
     storage.saveVerifier(pair.codeVerifier);
 
+    final eqp = widget.extraQueryParams ?? {};
+
     final queryParameters = <String, dynamic>{
+      ...eqp,
       "scope": "email",
       "client_id": widget.oauthClientId,
       "code_challenge": pair.codeChallenge,
@@ -240,12 +243,6 @@ class _LoginScopeState extends State<LoginScope> {
 
     if (provider != null) {
       queryParameters["provider"] = provider;
-    }
-
-    if (widget.extraQueryParams != null) {
-      queryParameters["extra_query_params"] = jsonEncode(
-        widget.extraQueryParams,
-      );
     }
 
     final url = widget.serverUrl.replace(
