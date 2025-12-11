@@ -23,6 +23,7 @@ class LoginScope extends StatefulWidget {
     this.onAuthenticated,
     required this.builder,
     this.signInBuilder,
+    this.extraQueryParams,
   });
 
   final Uri serverUrl;
@@ -36,6 +37,7 @@ class LoginScope extends StatefulWidget {
     void Function(String? provider) signIn,
   )?
   signInBuilder;
+  final Map<String, String>? extraQueryParams;
 
   @override
   State createState() => _LoginScopeState();
@@ -227,7 +229,10 @@ class _LoginScopeState extends State<LoginScope> {
     final storage = LocalStoragePkceCache(localStorage);
     storage.saveVerifier(pair.codeVerifier);
 
+    final eqp = widget.extraQueryParams ?? {};
+
     final queryParameters = <String, dynamic>{
+      ...eqp,
       "scope": "email",
       "client_id": widget.oauthClientId,
       "code_challenge": pair.codeChallenge,
@@ -248,10 +253,9 @@ class _LoginScopeState extends State<LoginScope> {
     final returnUrl = await FlutterWebAuth2.authenticate(
       url: url.toString(),
       callbackUrlScheme: widget.callbackUrl.scheme,
-      options:
-          kIsWeb
-              ? FlutterWebAuth2Options(windowName: "_self")
-              : FlutterWebAuth2Options(),
+      options: kIsWeb
+          ? FlutterWebAuth2Options(windowName: "_self")
+          : FlutterWebAuth2Options(),
     );
 
     return returnUrl;
