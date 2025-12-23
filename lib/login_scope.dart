@@ -20,8 +20,9 @@ class LoginScope extends StatefulWidget {
     required this.serverUrl,
     required this.callbackUrl,
     required this.oauthClientId,
-    this.onAuthenticated,
     required this.builder,
+    this.scope = 'email',
+    this.onAuthenticated,
     this.signInBuilder,
     this.extraQueryParams,
   });
@@ -31,13 +32,9 @@ class LoginScope extends StatefulWidget {
   final String oauthClientId;
   final void Function(String returnUrl)? onAuthenticated;
   final Widget Function(BuildContext context) builder;
-  final Widget Function(
-    BuildContext context,
-    bool isCancelled,
-    void Function(String? provider) signIn,
-  )?
-  signInBuilder;
+  final Widget Function(BuildContext context, bool isCancelled, void Function(String? provider) signIn)? signInBuilder;
   final Map<String, String>? extraQueryParams;
+  final String scope;
 
   @override
   State createState() => _LoginScopeState();
@@ -61,15 +58,9 @@ class _LoginScopeState extends State<LoginScope> {
   void load() async {
     if (MeshagentAuth.current.isLoggedIn()) {
       try {
-        if (MeshagentAuth.current.expiration?.isAfter(
-              DateTime.now().add(Duration(hours: 8)),
-            ) ??
-            false) {
+        if (MeshagentAuth.current.expiration?.isAfter(DateTime.now().add(Duration(hours: 8))) ?? false) {
           final token = MeshagentAuth.current.getAccessToken()!;
-          final me = await Meshagent(
-            baseUrl: widget.serverUrl.toString(),
-            token: token,
-          ).getUserProfile("me");
+          final me = await Meshagent(baseUrl: widget.serverUrl.toString(), token: token).getUserProfile("me");
 
           MeshagentAuth.current.setUser(me);
           if (mounted) {
@@ -94,10 +85,7 @@ class _LoginScopeState extends State<LoginScope> {
 
           final token = MeshagentAuth.current.getAccessToken()!;
 
-          final me = await Meshagent(
-            baseUrl: widget.serverUrl.toString(),
-            token: token,
-          ).getUserProfile("me");
+          final me = await Meshagent(baseUrl: widget.serverUrl.toString(), token: token).getUserProfile("me");
 
           MeshagentAuth.current.setUser(me);
 
@@ -233,7 +221,7 @@ class _LoginScopeState extends State<LoginScope> {
 
     final queryParameters = <String, dynamic>{
       ...eqp,
-      "scope": "email",
+      "scope": widget.scope,
       "client_id": widget.oauthClientId,
       "code_challenge": pair.codeChallenge,
       "response_type": "code",
@@ -245,17 +233,12 @@ class _LoginScopeState extends State<LoginScope> {
       queryParameters["provider"] = provider;
     }
 
-    final url = widget.serverUrl.replace(
-      path: "/oauth/authorize",
-      queryParameters: queryParameters,
-    );
+    final url = widget.serverUrl.replace(path: "/oauth/authorize", queryParameters: queryParameters);
 
     final returnUrl = await FlutterWebAuth2.authenticate(
       url: url.toString(),
       callbackUrlScheme: widget.callbackUrl.scheme,
-      options: kIsWeb
-          ? FlutterWebAuth2Options(windowName: "_self")
-          : FlutterWebAuth2Options(),
+      options: kIsWeb ? FlutterWebAuth2Options(windowName: "_self") : FlutterWebAuth2Options(),
     );
 
     return returnUrl;
@@ -279,10 +262,7 @@ class _LoginScopeState extends State<LoginScope> {
             rowMainAxisSize: MainAxisSize.max,
             rowMainAxisAlignment: MainAxisAlignment.center,
             columnCrossAxisAlignment: CrossAxisAlignment.center,
-            title: Padding(
-              padding: EdgeInsets.only(bottom: 5),
-              child: Text("Login cancelled"),
-            ),
+            title: Padding(padding: EdgeInsets.only(bottom: 5), child: Text("Login cancelled")),
             description: Text("Please login to continue."),
             footer: Padding(
               padding: EdgeInsets.only(top: 30),

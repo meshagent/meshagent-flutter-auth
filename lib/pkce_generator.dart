@@ -16,8 +16,7 @@ class LocalStoragePkceCache implements PkceCache {
   static const _cvKey = 'cv';
 
   @override
-  Future<void> saveVerifier(String verifier) async =>
-      _storage.setItem(_cvKey, verifier);
+  Future<void> saveVerifier(String verifier) async => _storage.setItem(_cvKey, verifier);
 
   @override
   Future<String?> readVerifier() async => _storage.getItem(_cvKey);
@@ -30,16 +29,12 @@ class PkcePair {
   const PkcePair(this.codeVerifier, this.codeChallenge);
 
   @override
-  String toString() =>
-      'PkcePair(verifier: $codeVerifier, challenge: $codeChallenge)';
+  String toString() => 'PkcePair(verifier: $codeVerifier, challenge: $codeChallenge)';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is PkcePair &&
-          runtimeType == other.runtimeType &&
-          codeVerifier == other.codeVerifier &&
-          codeChallenge == other.codeChallenge;
+      other is PkcePair && runtimeType == other.runtimeType && codeVerifier == other.codeVerifier && codeChallenge == other.codeChallenge;
 
   @override
   int get hashCode => Object.hash(codeVerifier, codeChallenge);
@@ -54,8 +49,7 @@ class SecureRandomBytesSource implements RandomBytesSource {
   final Random _rng;
 
   @override
-  Uint8List nextBytes(int length) =>
-      Uint8List.fromList(List<int>.generate(length, (_) => _rng.nextInt(256)));
+  Uint8List nextBytes(int length) => Uint8List.fromList(List<int>.generate(length, (_) => _rng.nextInt(256)));
 }
 
 abstract class Hasher {
@@ -64,8 +58,7 @@ abstract class Hasher {
 
 class Sha256Hasher implements Hasher {
   @override
-  Uint8List hash(Uint8List data) =>
-      Uint8List.fromList(crypto.sha256.convert(data).bytes);
+  Uint8List hash(Uint8List data) => Uint8List.fromList(crypto.sha256.convert(data).bytes);
 }
 
 /// Generates PKCE pairs per RFC 7636, with injectable dependencies.
@@ -73,9 +66,7 @@ class PkceGenerator {
   static const int minVerifierLength = 43;
   static const int maxVerifierLength = 128;
 
-  PkceGenerator({RandomBytesSource? rng, Hasher? hasher})
-    : _rng = rng ?? SecureRandomBytesSource(),
-      _hasher = hasher ?? Sha256Hasher();
+  PkceGenerator({RandomBytesSource? rng, Hasher? hasher}) : _rng = rng ?? SecureRandomBytesSource(), _hasher = hasher ?? Sha256Hasher();
 
   final RandomBytesSource _rng;
   final Hasher _hasher;
@@ -90,11 +81,7 @@ class PkceGenerator {
 
   void _validateLength(int length) {
     if (length < minVerifierLength || length > maxVerifierLength) {
-      throw ArgumentError.value(
-        length,
-        'verifierLength',
-        'Must be between $minVerifierLength and $maxVerifierLength',
-      );
+      throw ArgumentError.value(length, 'verifierLength', 'Must be between $minVerifierLength and $maxVerifierLength');
     }
   }
 
@@ -103,9 +90,7 @@ class PkceGenerator {
     int bytesNeeded = ((targetLength * 3) / 4).ceil();
 
     while (true) {
-      final candidate = base64Url
-          .encode(_rng.nextBytes(bytesNeeded))
-          .replaceAll('=', '');
+      final candidate = base64Url.encode(_rng.nextBytes(bytesNeeded)).replaceAll('=', '');
 
       if (candidate.length >= targetLength) {
         // Trimming is allowed by the spec; no padding.
