@@ -13,6 +13,7 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
 import 'meshagent_auth.dart';
 import 'pkce_generator.dart';
+import 'oauth_session_manager.dart';
 
 class LoginScope extends StatefulWidget {
   const LoginScope({
@@ -48,6 +49,11 @@ class _LoginScopeState extends State<LoginScope> {
   bool isCancelled = false;
   bool isLoginLaunched = false;
 
+  late final OAuthSessionManager _session = OAuthSessionManager(
+    serverUrl: widget.serverUrl,
+    clientId: widget.oauthClientId,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -56,63 +62,7 @@ class _LoginScopeState extends State<LoginScope> {
   }
 
   void load() async {
-    if (MeshagentAuth.current.isLoggedIn()) {
-      try {
-        if (MeshagentAuth.current.expiration?.isAfter(DateTime.now().add(Duration(hours: 8))) ?? false) {
-          final token = MeshagentAuth.current.getAccessToken()!;
-          final me = await Meshagent(baseUrl: widget.serverUrl.toString(), token: token).getUserProfile("me");
-
-          MeshagentAuth.current.setUser(me);
-          if (mounted) {
-            setState(() {
-              failed = null;
-              refreshing = false;
-              isLoginLaunched = false;
-              isCancelled = false;
-            });
-          }
-        } else {
-          setState(() {
-            refreshing = true;
-          });
-
-          // expired
-          await refreshOAuthToken(
-            refreshToken: MeshagentAuth.current.getRefreshToken()!,
-            clientId: widget.oauthClientId,
-            tokenEndpoint: widget.serverUrl.replace(path: "/oauth/token"),
-          );
-
-          final token = MeshagentAuth.current.getAccessToken()!;
-
-          final me = await Meshagent(baseUrl: widget.serverUrl.toString(), token: token).getUserProfile("me");
-
-          MeshagentAuth.current.setUser(me);
-
-          if (mounted) {
-            setState(() {
-              failed = null;
-              refreshing = false;
-              isLoginLaunched = false;
-              isCancelled = false;
-            });
-          }
-        }
-      } on Exception catch (e) {
-        MeshagentAuth.current.setAccessToken(null);
-        MeshagentAuth.current.setRefreshToken(null);
-        MeshagentAuth.current.setExpiresIn(null);
-
-        if (mounted) {
-          setState(() {
-            failed = e;
-            refreshing = false;
-            isLoginLaunched = true;
-            isCancelled = false;
-          });
-        }
-      }
-    } else {
+    if (!MeshagentAuth.current.isLoggedIn()) {
       if (widget.signInBuilder == null) {
         await signIn(null);
       } else {
@@ -124,6 +74,42 @@ class _LoginScopeState extends State<LoginScope> {
             isCancelled = false;
           });
         }
+      }
+      return;
+    }
+
+    setState(() {
+      refreshing = true;
+    });
+
+    try {
+      final token = await _session.getValidAccessTokenOrThrow();
+
+      final me = await Meshagent(baseUrl: widget.serverUrl.toString(), token: token).getUserProfile("me");
+
+      MeshagentAuth.current.setUser(me);
+
+      if (mounted) {
+        setState(() {
+          failed = null;
+          refreshing = false;
+          isLoginLaunched = false;
+          isCancelled = false;
+        });
+      }
+    } on Exception catch (e) {
+      MeshagentAuth.current.setAccessToken(null);
+      MeshagentAuth.current.setRefreshToken(null);
+      MeshagentAuth.current.setExpiresIn(null);
+      MeshagentAuth.current.setUser(null);
+
+      if (mounted) {
+        setState(() {
+          failed = e;
+          refreshing = false;
+          isLoginLaunched = true;
+          isCancelled = false;
+        });
       }
     }
   }
