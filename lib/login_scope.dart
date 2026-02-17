@@ -49,10 +49,7 @@ class _LoginScopeState extends State<LoginScope> {
   bool isCancelled = false;
   bool isLoginLaunched = false;
 
-  late final OAuthSessionManager _session = OAuthSessionManager(
-    serverUrl: widget.serverUrl,
-    clientId: widget.oauthClientId,
-  );
+  late final OAuthSessionManager _session = OAuthSessionManager(serverUrl: widget.serverUrl, clientId: widget.oauthClientId);
 
   @override
   void initState() {
