@@ -33,7 +33,7 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter    
-  meshagent: ^0.29.0
+  meshagent: ^0.28.0
   localstorage: ^5.0.0
   flutter_web_auth_2: ^4.1.0
   shadcn_ui: ^0.43.2
