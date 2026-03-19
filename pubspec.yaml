@@ -36,7 +36,7 @@ dependencies:
   meshagent: ^0.31.3
   localstorage: ^5.0.0
   flutter_web_auth_2: ^4.1.0
-    shadcn_ui: ^0.52.1
+  shadcn_ui: ^0.52.1
   http: ^1.6.0
   crypto: ^3.0.7
 
