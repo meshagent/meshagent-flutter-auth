@@ -17,6 +17,7 @@ class MeshagentAuth {
     setAccessToken(null);
     setRefreshToken(null);
     setExpiresIn(null);
+    setUser(null);
   }
 
   bool isLoggedIn() {

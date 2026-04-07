@@ -83,9 +83,23 @@ class _MAuthResponsePage extends State<MAuthResponsePage> {
     MeshagentAuth.current.setAccessToken(accessToken);
     MeshagentAuth.current.setRefreshToken(refreshToken);
 
-    final client = getMeshagentClient();
-    final me = await client.getUserProfile("me");
-    MeshagentAuth.current.setUser(me);
+    try {
+      final client = getMeshagentClient();
+      final me = await client.getUserProfile("me");
+      MeshagentAuth.current.setUser(me);
+    } on ForbiddenException {
+      MeshagentAuth.current.signOut();
+      widget.onAuthSuccess();
+      return;
+    } on Exception catch (e) {
+      MeshagentAuth.current.signOut();
+      if (mounted) {
+        setState(() {
+          error = e.toString();
+        });
+      }
+      return;
+    }
 
     final expiresIn = data["expires_in"];
     if (expiresIn != null) {

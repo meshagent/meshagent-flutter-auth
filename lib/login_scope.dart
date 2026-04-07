@@ -58,6 +58,25 @@ class _LoginScopeState extends State<LoginScope> {
     load();
   }
 
+  Future<void> _restartLoginAfterForbiddenProfileLoad() async {
+    MeshagentAuth.current.signOut();
+
+    if (widget.signInBuilder == null) {
+      await signIn(null);
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        failed = null;
+        refreshing = false;
+        isLoginLaunched = true;
+        isCancelled = false;
+        isSigningIn = false;
+      });
+    }
+  }
+
   void load() async {
     if (!MeshagentAuth.current.isLoggedIn()) {
       if (widget.signInBuilder == null) {
@@ -94,11 +113,10 @@ class _LoginScopeState extends State<LoginScope> {
           isCancelled = false;
         });
       }
+    } on ForbiddenException {
+      await _restartLoginAfterForbiddenProfileLoad();
     } on Exception catch (e) {
-      MeshagentAuth.current.setAccessToken(null);
-      MeshagentAuth.current.setRefreshToken(null);
-      MeshagentAuth.current.setExpiresIn(null);
-      MeshagentAuth.current.setUser(null);
+      MeshagentAuth.current.signOut();
 
       if (mounted) {
         setState(() {
