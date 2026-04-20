@@ -22,7 +22,7 @@ class LoginScope extends StatefulWidget {
     required this.callbackUrl,
     required this.oauthClientId,
     required this.builder,
-    this.scope = 'profile',
+    this.scope = fullOAuthScope,
     this.onAuthenticated,
     this.signInBuilder,
     this.extraQueryParams,
