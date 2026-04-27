@@ -186,7 +186,7 @@ class _LoginScopeState extends State<LoginScope> {
         'grant_type': 'refresh_token',
         'refresh_token': refreshToken,
         'client_id': clientId,
-        if (clientSecret != null) 'client_secret': clientSecret,
+        'client_secret': ?clientSecret,
       }),
     );
 
