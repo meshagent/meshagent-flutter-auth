@@ -47,3 +47,8 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
+
+dependency_overrides:
+  shadcn_ui:
+    git:
+      url: https://github.com/brandon-bethke-timu/flutter-shadcn-ui
