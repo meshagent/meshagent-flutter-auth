@@ -67,4 +67,12 @@ class MeshagentAuth {
       localStorage.setItem("ma:expiration", DateTime.now().toUtc().add(Duration(seconds: expiresIn)).toIso8601String());
     }
   }
+
+  void setExpiration(DateTime? expiration) {
+    if (expiration == null) {
+      localStorage.removeItem("ma:expiration");
+    } else {
+      localStorage.setItem("ma:expiration", expiration.toUtc().toIso8601String());
+    }
+  }
 }

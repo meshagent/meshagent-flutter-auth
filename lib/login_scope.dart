@@ -26,6 +26,8 @@ class LoginScope extends StatefulWidget {
     this.onAuthenticated,
     this.signInBuilder,
     this.extraQueryParams,
+    this.session,
+    this.preferEphemeralAuthSession = false,
   });
 
   final Uri serverUrl;
@@ -36,6 +38,10 @@ class LoginScope extends StatefulWidget {
   final Widget Function(BuildContext context, bool isCancelled, void Function(String? provider) signIn)? signInBuilder;
   final Map<String, String>? extraQueryParams;
   final String scope;
+  final bool preferEphemeralAuthSession;
+
+  @visibleForTesting
+  final OAuthSessionManager? session;
 
   @override
   State createState() => _LoginScopeState();
@@ -49,7 +55,8 @@ class _LoginScopeState extends State<LoginScope> {
   bool isCancelled = false;
   bool isLoginLaunched = false;
 
-  late final OAuthSessionManager _session = OAuthSessionManager(serverUrl: widget.serverUrl, clientId: widget.oauthClientId);
+  late final OAuthSessionManager _session =
+      widget.session ?? OAuthSessionManager(serverUrl: widget.serverUrl, clientId: widget.oauthClientId);
 
   @override
   void initState() {
@@ -98,9 +105,15 @@ class _LoginScopeState extends State<LoginScope> {
       refreshing = true;
     });
 
+    String token;
     try {
-      final token = await _session.getValidAccessTokenOrThrow();
+      token = await _session.getValidAccessTokenOrThrow();
+    } on Exception {
+      await _restartLoginAfterForbiddenProfileLoad();
+      return;
+    }
 
+    try {
       final me = await Meshagent(baseUrl: widget.serverUrl.toString(), token: token).getUserProfile("me");
 
       MeshagentAuth.current.setUser(me);
@@ -239,7 +252,9 @@ class _LoginScopeState extends State<LoginScope> {
     final returnUrl = await FlutterWebAuth2.authenticate(
       url: url.toString(),
       callbackUrlScheme: widget.callbackUrl.scheme,
-      options: kIsWeb ? FlutterWebAuth2Options(windowName: "_self") : FlutterWebAuth2Options(),
+      options: kIsWeb
+          ? FlutterWebAuth2Options(windowName: "_self")
+          : FlutterWebAuth2Options(preferEphemeral: widget.preferEphemeralAuthSession),
     );
 
     return returnUrl;

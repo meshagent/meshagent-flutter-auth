@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:localstorage/localstorage.dart';
@@ -21,7 +22,7 @@ class MAuthResponsePage extends StatefulWidget {
   final Uri callbackUrl;
   final String oauthClientId;
   final String authorizationCode;
-  final VoidCallback onAuthSuccess;
+  final FutureOr<void> Function() onAuthSuccess;
 
   @override
   State createState() => _MAuthResponsePage();
@@ -89,7 +90,7 @@ class _MAuthResponsePage extends State<MAuthResponsePage> {
       MeshagentAuth.current.setUser(me);
     } on ForbiddenException {
       MeshagentAuth.current.signOut();
-      widget.onAuthSuccess();
+      await widget.onAuthSuccess();
       return;
     } on Exception catch (e) {
       MeshagentAuth.current.signOut();
@@ -108,7 +109,7 @@ class _MAuthResponsePage extends State<MAuthResponsePage> {
       MeshagentAuth.current.setExpiresIn(null);
     }
 
-    widget.onAuthSuccess();
+    await widget.onAuthSuccess();
   }
 
   @override
