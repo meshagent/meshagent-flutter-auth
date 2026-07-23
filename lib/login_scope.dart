@@ -27,7 +27,10 @@ class LoginScope extends StatefulWidget {
     this.signInBuilder,
     this.extraQueryParams,
     this.session,
+    this.client,
     this.preferEphemeralAuthSession = false,
+    this.onSessionReady,
+    this.loadingBuilder,
   });
 
   final Uri serverUrl;
@@ -39,9 +42,14 @@ class LoginScope extends StatefulWidget {
   final Map<String, String>? extraQueryParams;
   final String scope;
   final bool preferEphemeralAuthSession;
+  final FutureOr<void> Function()? onSessionReady;
+  final WidgetBuilder? loadingBuilder;
 
   @visibleForTesting
   final OAuthSessionManager? session;
+
+  @visibleForTesting
+  final Client? client;
 
   @override
   State createState() => _LoginScopeState();
@@ -108,15 +116,19 @@ class _LoginScopeState extends State<LoginScope> {
     String token;
     try {
       token = await _session.getValidAccessTokenOrThrow();
+    } on StateError {
+      await _restartLoginAfterForbiddenProfileLoad();
+      return;
     } on Exception {
       await _restartLoginAfterForbiddenProfileLoad();
       return;
     }
 
     try {
-      final me = await Meshagent(baseUrl: widget.serverUrl.toString(), token: token).getUserProfile("me");
+      final me = await Meshagent(baseUrl: widget.serverUrl.toString(), token: token, client: widget.client).getUserProfile("me");
 
       MeshagentAuth.current.setUser(me);
+      await widget.onSessionReady?.call();
 
       if (mounted) {
         setState(() {
@@ -263,7 +275,7 @@ class _LoginScopeState extends State<LoginScope> {
   @override
   Widget build(BuildContext context) {
     if (isSigningIn || refreshing) {
-      return Center(child: CircularProgressIndicator());
+      return _buildLoading(context);
     }
 
     if (isLoginLaunched && widget.signInBuilder != null) {
@@ -305,6 +317,10 @@ class _LoginScopeState extends State<LoginScope> {
       return widget.builder(context);
     }
 
-    return Center(child: CircularProgressIndicator());
+    return _buildLoading(context);
+  }
+
+  Widget _buildLoading(BuildContext context) {
+    return widget.loadingBuilder?.call(context) ?? Center(child: CircularProgressIndicator());
   }
 }
